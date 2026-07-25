@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+docs/
+html_screens/
+
+# Generated / temporary data files (not source code)
+mcp_tools.json
+mcp_tools_utf8.json
+projects.json
+screens.json
+suggested_routes.json
+suggested_routes_utf8.json
