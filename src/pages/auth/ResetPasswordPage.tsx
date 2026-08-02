@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/glass-card';
-import { GlassInput } from '../../components/ui/glass-input';
 import { Button } from '../../components/ui/button';
 import { useResetPassword } from '../../features/auth/auth.hooks';
 
@@ -37,7 +36,7 @@ export default function ResetPasswordPage() {
   const isLoading = resetPasswordMutation.isPending;
 
   return (
-    <div className="w-full max-w-md relative z-10">
+    <div className="w-full max-w-md mx-auto relative z-10">
       <div className="text-center mb-8 animate-float-up">
         <h1 className="font-heading font-bold text-3xl md:text-4xl tracking-tighter text-primary drop-shadow-[0_0_10px_rgba(99,102,241,0.3)] mb-2">TekcitYm</h1>
         <p className="text-lg text-muted-foreground">Secure your access.</p>
@@ -49,7 +48,7 @@ export default function ResetPasswordPage() {
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* New Password Field */}
             <div className="space-y-2 relative group">
-              <label className="text-xs font-semibold text-muted-foreground flex items-center justify-between" htmlFor="new-password">
+              <label className="text-sm font-semibold tracking-wide text-muted-foreground flex items-center justify-between" htmlFor="new-password">
                 New Password
                 <span 
                   className="material-symbols-outlined text-[16px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
@@ -58,14 +57,14 @@ export default function ResetPasswordPage() {
                   {showPassword ? 'visibility' : 'visibility_off'}
                 </span>
               </label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">lock</span>
-                <GlassInput 
+              <div className="input-glass rounded-lg flex items-center px-4 py-3 group-focus-within:border-primary">
+                <span className="material-symbols-outlined text-muted-foreground mr-3 group-focus-within:text-primary transition-colors">lock</span>
+                <input 
                   id="new-password" 
                   placeholder="Enter new password" 
                   required 
                   type={showPassword ? 'text' : 'password'} 
-                  className="pl-10 pr-4 py-3"
+                  className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -73,8 +72,8 @@ export default function ResetPasswordPage() {
             </div>
             
             {/* Confirm Password Field */}
-            <div className="space-y-2 relative group">
-              <label className="text-xs font-semibold text-muted-foreground flex items-center justify-between" htmlFor="confirm-password">
+            <div className="space-y-2 relative group mt-5">
+              <label className="text-sm font-semibold tracking-wide text-muted-foreground flex items-center justify-between" htmlFor="confirm-password">
                 Confirm Password
                 <span 
                   className="material-symbols-outlined text-[16px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
@@ -83,14 +82,14 @@ export default function ResetPasswordPage() {
                   {showConfirmPassword ? 'visibility' : 'visibility_off'}
                 </span>
               </label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">lock_reset</span>
-                <GlassInput 
+              <div className="input-glass rounded-lg flex items-center px-4 py-3 group-focus-within:border-primary">
+                <span className="material-symbols-outlined text-muted-foreground mr-3 group-focus-within:text-primary transition-colors">lock_reset</span>
+                <input 
                   id="confirm-password" 
                   placeholder="Confirm new password" 
                   required 
                   type={showConfirmPassword ? 'text' : 'password'} 
-                  className="pl-10 pr-4 py-3"
+                  className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />

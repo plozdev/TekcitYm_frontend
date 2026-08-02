@@ -151,6 +151,17 @@
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.05);
   }
+  .input-glass {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+  }
+  .input-glass:focus-within {
+    border-color: #585990;
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+  }
   .stage-glow {
     background: linear-gradient(180deg, theme('colors.indigo.500/20') 0%, transparent 100%);
     box-shadow: 0 -20px 60px theme('colors.indigo.500/10');

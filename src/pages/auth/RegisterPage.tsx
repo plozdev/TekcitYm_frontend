@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { GlassCard } from '../../components/ui/glass-card';
-import { GlassInput } from '../../components/ui/glass-input';
 import { Button } from '../../components/ui/button';
 import { useRegister } from '../../features/auth/auth.hooks';
 
@@ -62,7 +61,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-md relative z-10">
+    <div className="w-full max-w-md mx-auto relative z-10">
       <GlassCard className="p-8 rounded-2xl shadow-2xl space-y-8 border border-white/5">
         <div className="text-center">
           <h1 className="font-heading font-bold text-3xl text-primary tracking-tighter mb-6">TekcitYm</h1>
@@ -73,14 +72,14 @@ export default function RegisterPage() {
         <form className="space-y-6 mt-8" onSubmit={handleSubmit(onSubmit)}>
           {/* Full Name Field */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-muted-foreground" htmlFor="fullName">Full Name</label>
-            <div className="relative flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-muted-foreground">person</span>
-              <GlassInput 
+            <label className="block text-sm font-semibold tracking-wide text-muted-foreground" htmlFor="fullName">Full Name</label>
+            <div className={`input-glass rounded-lg flex items-center px-4 py-3 ${errors.fullName ? 'border-destructive' : ''}`}>
+              <span className="material-symbols-outlined text-muted-foreground mr-3">person</span>
+              <input 
                 id="fullName" 
                 placeholder="Jane Doe" 
                 type="text" 
-                className={`pl-10 ${errors.fullName ? 'border-destructive' : ''}`}
+                className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                 {...register('fullName')}
               />
             </div>
@@ -89,14 +88,14 @@ export default function RegisterPage() {
           
           {/* Email Field */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-muted-foreground" htmlFor="email">Email Address</label>
-            <div className="relative flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-muted-foreground">mail</span>
-              <GlassInput 
+            <label className="block text-sm font-semibold tracking-wide text-muted-foreground" htmlFor="email">Email Address</label>
+            <div className={`input-glass rounded-lg flex items-center px-4 py-3 ${errors.email ? 'border-destructive' : ''}`}>
+              <span className="material-symbols-outlined text-muted-foreground mr-3">mail</span>
+              <input 
                 id="email" 
                 placeholder="jane@example.com" 
                 type="email" 
-                className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
+                className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                 {...register('email')}
               />
             </div>
@@ -105,22 +104,22 @@ export default function RegisterPage() {
           
           {/* Password Field */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-muted-foreground" htmlFor="password">Password</label>
-            <div className="relative flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-muted-foreground">lock</span>
-              <GlassInput 
+            <label className="block text-sm font-semibold tracking-wide text-muted-foreground" htmlFor="password">Password</label>
+            <div className={`input-glass rounded-lg flex items-center px-4 py-3 ${errors.password ? 'border-destructive' : ''}`}>
+              <span className="material-symbols-outlined text-muted-foreground mr-3">lock</span>
+              <input 
                 id="password" 
                 placeholder="••••••••" 
                 type={showPassword ? 'text' : 'password'} 
-                className={`pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                 {...register('password')}
               />
               <button 
                 type="button"
-                className="absolute right-3 text-muted-foreground hover:text-primary transition-colors focus:outline-none flex items-center"
+                className="text-muted-foreground hover:text-foreground transition-colors ml-2 focus:outline-none"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility' : 'visibility_off'}</span>
+                <span className="material-symbols-outlined">{showPassword ? 'visibility' : 'visibility_off'}</span>
               </button>
             </div>
             {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}

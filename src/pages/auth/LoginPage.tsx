@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { GlassCard } from '../../components/ui/glass-card';
-import { GlassInput } from '../../components/ui/glass-input';
 import { Button } from '../../components/ui/button';
 import { useLogin } from '../../features/auth/auth.hooks';
 
@@ -36,7 +35,7 @@ export default function LoginPage() {
   const isLoading = loginMutation.isPending;
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md mx-auto">
       {/* Branding Above Form */}
       <div className="text-center mb-8">
         <h1 className="font-heading font-bold text-4xl text-primary tracking-tighter mb-4">TekcitYm</h1>
@@ -53,14 +52,14 @@ export default function LoginPage() {
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {/* Email / Username */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-muted-foreground" htmlFor="email">Email</label>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">mail</span>
-              <GlassInput 
+            <label className="block text-sm font-semibold tracking-wide text-muted-foreground" htmlFor="email">Email or Username</label>
+            <div className={`input-glass rounded-lg flex items-center px-4 py-3 ${errors.email ? 'border-destructive' : ''}`}>
+              <span className="material-symbols-outlined text-muted-foreground mr-3">person</span>
+              <input 
                 id="email" 
-                placeholder="Enter your email" 
-                type="email" 
-                className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
+                placeholder="Enter your email or username" 
+                type="text" 
+                className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                 {...register('email')}
               />
             </div>
@@ -70,24 +69,24 @@ export default function LoginPage() {
           {/* Password */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="block text-xs font-semibold text-muted-foreground" htmlFor="password">Password</label>
-              <Link to="/forgot-password" className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">Forgot Password?</Link>
+              <label className="block text-sm font-semibold tracking-wide text-muted-foreground" htmlFor="password">Password</label>
+              <Link to="/forgot-password" className="text-sm font-semibold tracking-wide text-primary hover:text-primary/80 transition-colors">Forgot Password?</Link>
             </div>
-            <div className="relative flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-muted-foreground">lock</span>
-              <GlassInput 
+            <div className={`input-glass rounded-lg flex items-center px-4 py-3 ${errors.password ? 'border-destructive' : ''}`}>
+              <span className="material-symbols-outlined text-muted-foreground mr-3">lock</span>
+              <input 
                 id="password" 
                 placeholder="Enter your password" 
                 type={showPassword ? 'text' : 'password'} 
-                className={`pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                 {...register('password')}
               />
               <button 
                 type="button"
-                className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors focus:outline-none flex items-center"
+                className="text-muted-foreground hover:text-foreground transition-colors ml-2 focus:outline-none"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility' : 'visibility_off'}</span>
+                <span className="material-symbols-outlined">{ showPassword ? 'visibility' : 'visibility_off'}</span>
               </button>
             </div>
             {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}

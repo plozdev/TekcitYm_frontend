@@ -93,7 +93,7 @@ export default function OTPVerificationPage() {
   const isComplete = otp.every(val => val !== '');
 
   return (
-    <div className="w-full max-w-md px-4 md:px-0 relative z-10">
+    <div className="w-full max-w-md mx-auto px-4 md:px-0 relative z-10">
       {/* Brand Header */}
       <div className="text-center mb-10">
         <h1 className="font-heading font-bold text-3xl md:text-4xl text-primary tracking-tighter">TekcitYm</h1>

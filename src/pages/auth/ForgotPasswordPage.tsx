@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { GlassCard } from '../../components/ui/glass-card';
-import { GlassInput } from '../../components/ui/glass-input';
 import { Button } from '../../components/ui/button';
 import { useForgotPassword } from '../../features/auth/auth.hooks';
 
@@ -40,7 +39,7 @@ export default function ForgotPasswordPage() {
   const isLoading = forgotPasswordMutation.isPending;
 
   return (
-    <div className="w-full max-w-md relative z-10">
+    <div className="w-full max-w-md mx-auto relative z-10">
       {/* Logo/Brand */}
       <div className="text-center mb-8">
         <h1 className="font-heading font-bold text-3xl md:text-4xl text-primary tracking-tighter">TekcitYm</h1>
@@ -59,14 +58,14 @@ export default function ForgotPasswordPage() {
             
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2" htmlFor="email">Email Address</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">mail</span>
-                  <GlassInput 
+                <label className="block text-sm font-semibold tracking-wide text-muted-foreground mb-2" htmlFor="email">Email Address</label>
+                <div className={`input-glass rounded-lg flex items-center px-4 py-3 ${errors.email ? 'border-destructive' : ''}`}>
+                  <span className="material-symbols-outlined text-muted-foreground mr-3">mail</span>
+                  <input 
                     id="email" 
                     placeholder="name@example.com" 
                     type="email" 
-                    className={`pl-12 py-3 ${errors.email ? 'border-destructive' : ''}`}
+                    className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                     {...register('email')}
                   />
                 </div>
