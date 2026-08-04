@@ -19,11 +19,11 @@ const MyTicketsPage = React.lazy(() => import('../pages/tickets/MyTicketsPage'))
 const TicketDetailsPage = React.lazy(() => import('../pages/tickets/TicketDetailsPage'));
 const UserProfilePage = React.lazy(() => import('../pages/profile/UserProfilePage'));
 
-const LoginPage = React.lazy(() => import('../pages/auth/LoginPage'));
-const RegisterPage = React.lazy(() => import('../pages/auth/RegisterPage'));
-const ForgotPasswordPage = React.lazy(() => import('../pages/auth/ForgotPasswordPage'));
-const ResetPasswordPage = React.lazy(() => import('../pages/auth/ResetPasswordPage'));
-const OTPVerificationPage = React.lazy(() => import('../pages/auth/OtpVerificationPage'));
+import LoginPage from '../pages/auth/LoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
+import OTPVerificationPage from '../pages/auth/OtpVerificationPage';
 
 const OrganizerDashboardPage = React.lazy(() => import('../pages/organizer/OrganizerDashboardPage'));
 const RevenueAnalyticsPage = React.lazy(() => import('../pages/organizer/RevenueAnalyticsPage'));
@@ -63,11 +63,11 @@ const router = createBrowserRouter([
     element: <AuthLayout />,
     errorElement: <GlobalErrorPage />,
     children: [
-      { path: 'login', element: <Suspense fallback={<LoadingFallback />}><LoginPage /></Suspense> },
-      { path: 'register', element: <Suspense fallback={<LoadingFallback />}><RegisterPage /></Suspense> },
-      { path: 'forgot-password', element: <Suspense fallback={<LoadingFallback />}><ForgotPasswordPage /></Suspense> },
-      { path: 'reset-password', element: <Suspense fallback={<LoadingFallback />}><ResetPasswordPage /></Suspense> },
-      { path: 'verify-otp', element: <Suspense fallback={<LoadingFallback />}><OTPVerificationPage /></Suspense> },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'register', element: <RegisterPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password', element: <ResetPasswordPage /> },
+      { path: 'verify-otp', element: <OTPVerificationPage /> },
     ],
   },
   {
