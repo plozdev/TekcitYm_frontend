@@ -41,7 +41,7 @@ export interface User {
 
 export interface OtpRequest {
   email: string;
-  otp: string;
+  otpCode: string;
 }
 
 export interface ForgotPasswordRequest {

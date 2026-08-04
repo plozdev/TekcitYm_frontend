@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
+  withCredentials: true,
+  timeout: 30000,
 });
 
 // Attach token from localStorage on every request
@@ -15,10 +16,13 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally: clear token and redirect to /login
+// Handle errors globally
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      error.message = 'Connection timed out. Please check your network or try again.';
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
