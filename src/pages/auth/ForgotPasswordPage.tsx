@@ -40,9 +40,8 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="w-full max-w-md mx-auto relative z-10">
-      {/* Logo/Brand */}
       <div className="text-center mb-8">
-        <h1 className="font-heading font-bold text-3xl md:text-4xl text-primary tracking-tighter">TekcitYm</h1>
+        <Link to="/" className="font-heading font-bold text-3xl md:text-4xl text-primary tracking-tighter hover:opacity-80 transition-opacity inline-block">TekcitYm</Link>
       </div>
       
       {/* Glassmorphism Card */}

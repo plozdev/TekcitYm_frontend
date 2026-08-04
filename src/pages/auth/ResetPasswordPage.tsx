@@ -38,7 +38,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="w-full max-w-md mx-auto relative z-10">
       <div className="text-center mb-8 animate-float-up">
-        <h1 className="font-heading font-bold text-3xl md:text-4xl tracking-tighter text-primary drop-shadow-[0_0_10px_rgba(99,102,241,0.3)] mb-2">TekcitYm</h1>
+        <Link to="/" className="font-heading font-bold text-3xl md:text-4xl tracking-tighter text-primary drop-shadow-[0_0_10px_rgba(99,102,241,0.3)] mb-2 inline-block hover:opacity-80 transition-opacity">TekcitYm</Link>
         <p className="text-lg text-muted-foreground">Secure your access.</p>
       </div>
       

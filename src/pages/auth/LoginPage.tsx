@@ -16,18 +16,39 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const navigate = useNavigate();
   
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
+  const { register, handleSubmit, setError, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema)
   });
 
   const loginMutation = useLogin();
 
   const onSubmit = (data: LoginFormValues) => {
+    setServerError(null);
     loginMutation.mutate(data, {
       onSuccess: () => {
         navigate('/');
+      },
+      onError: (error: any) => {
+        const resData = error?.response?.data;
+        if (resData?.errorCode === 'EMAIL_NOT_VERIFIED') {
+          navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
+
+        const fieldErrors = resData?.details;
+        if (fieldErrors && typeof fieldErrors === 'object') {
+          Object.keys(fieldErrors).forEach((field) => {
+            setError(field as keyof LoginFormValues, {
+              type: 'server',
+              message: fieldErrors[field],
+            });
+          });
+        } else {
+          setServerError(resData?.message || error?.message || 'Invalid email or password.');
+        }
       }
     });
   };
@@ -36,14 +57,12 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      {/* Branding Above Form */}
-      <div className="text-center mb-8">
-        <h1 className="font-heading font-bold text-4xl text-primary tracking-tighter mb-4">TekcitYm</h1>
-        <p className="text-muted-foreground text-sm max-w-md mx-auto">Experience the digital venue. Your premium access to the world's most exclusive events starts here.</p>
-      </div>
-      
+
       {/* The Form Container */}
       <GlassCard className="p-8 md:p-10 rounded-2xl relative overflow-hidden">
+        <div className="text-center">
+          <Link to="/" className="font-heading font-bold text-3xl text-primary tracking-tighter mb-6 inline-block hover:opacity-80 transition-opacity">TekcitYm</Link>  
+        </div>
         <div className="mb-8">
           <h2 className="font-heading font-semibold text-3xl text-foreground mb-2">Welcome Back</h2>
           <p className="text-muted-foreground text-sm">Sign in to access your tickets and digital venues.</p>
@@ -59,7 +78,7 @@ export default function LoginPage() {
                 id="email" 
                 placeholder="Enter your email or username" 
                 type="text" 
-                className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
+                className="bg-transparent border-none outline-none w-full text-sm font-sans font-normal text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                 {...register('email')}
               />
             </div>
@@ -78,11 +97,12 @@ export default function LoginPage() {
                 id="password" 
                 placeholder="Enter your password" 
                 type={showPassword ? 'text' : 'password'} 
-                className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
+                className="bg-transparent border-none outline-none w-full text-sm font-sans font-normal text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                 {...register('password')}
               />
               <button 
                 type="button"
+                tabIndex={-1}
                 className="text-muted-foreground hover:text-foreground transition-colors ml-2 focus:outline-none"
                 onClick={() => setShowPassword(!showPassword)}
               >
@@ -92,22 +112,29 @@ export default function LoginPage() {
             {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
           </div>
           
-          {loginMutation.isError && (
-            <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded border border-destructive/20">
-              {(loginMutation.error as any)?.response?.data?.message || loginMutation.error.message || 'Login failed. Please try again.'}
+          {serverError && (
+            <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded-lg border border-destructive/20 transition-all">
+              {serverError}
             </div>
           )}
           
           {/* Remember Me */}
           <div className="flex items-center">
-            <input 
-              id="remember-me" 
-              name="remember-me" 
-              type="checkbox" 
-              className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-primary focus:ring-offset-background"
-            />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-muted-foreground">
-              Remember Me
+            <label htmlFor="remember-me" className="flex items-center cursor-pointer group">
+              <div className="relative">
+                <input 
+                  id="remember-me" 
+                  name="remember-me" 
+                  type="checkbox" 
+                  className="peer sr-only"
+                />
+                <div className="w-4 h-4 rounded border border-white/20 bg-card/40 peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center group-hover:border-primary/50">
+                  <span className="material-symbols-outlined text-[12px] text-primary-foreground opacity-0 peer-checked:opacity-100 transition-opacity font-bold">check</span>
+                </div>
+              </div>
+              <span className="ml-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors select-none">
+                Remember Me
+              </span>
             </label>
           </div>
           

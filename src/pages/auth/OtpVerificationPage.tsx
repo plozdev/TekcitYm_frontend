@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { useVerifyOtp, useResendOtp } from '../../features/auth/auth.hooks';
@@ -71,11 +71,7 @@ export default function OTPVerificationPage() {
   const handleVerify = () => {
     const code = otp.join('');
     if (code.length === 6) {
-      verifyOtpMutation.mutate({ email, otp: code }, {
-        onSuccess: () => {
-          setTimeout(() => navigate('/login'), 1000);
-        }
-      });
+      verifyOtpMutation.mutate({ email, otpCode: code });
     }
   };
 
@@ -96,7 +92,7 @@ export default function OTPVerificationPage() {
     <div className="w-full max-w-md mx-auto px-4 md:px-0 relative z-10">
       {/* Brand Header */}
       <div className="text-center mb-10">
-        <h1 className="font-heading font-bold text-3xl md:text-4xl text-primary tracking-tighter">TekcitYm</h1>
+        <Link to="/" className="font-heading font-bold text-3xl md:text-4xl text-primary tracking-tighter hover:opacity-80 transition-opacity inline-block">TekcitYm</Link>
       </div>
       
       {/* Verification Card */}

@@ -11,29 +11,66 @@ const registerSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema)
+  const { register, handleSubmit, watch, setError, formState: { errors } } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    mode: 'onChange',
   });
 
   const registerMutation = useRegister();
 
   const onSubmit = (data: RegisterFormValues) => {
-    registerMutation.mutate(data, {
+    const payload = {
+      fullName: data.fullName.trim(),
+      email: data.email.trim(),
+      password: data.password.trim(),
+    };
+
+    registerMutation.mutate(payload, {
       onSuccess: () => {
-        navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`);
+        navigate(`/verify-otp?email=${encodeURIComponent(payload.email)}`);
+      },
+      onError: (error: any) => {
+        const resData = error?.response?.data;
+        const fieldErrors = resData?.details;
+
+        if (fieldErrors && typeof fieldErrors === 'object') {
+          Object.keys(fieldErrors).forEach((field) => {
+            if (field in data) {
+              setError(field as keyof RegisterFormValues, {
+                type: 'server',
+                message: fieldErrors[field],
+              });
+            }
+          });
+        } else if (resData?.errorCode === 'EMAIL_ALREADY_EXISTS') {
+          setError('email', {
+            type: 'server',
+            message: resData.message || 'Email is already in use.',
+          });
+        }
       }
     });
   };
 
   const passwordValue = watch('password') || '';
+  const confirmPasswordValue = watch('confirmPassword') || '';
+  
+  const isConfirmTyped = confirmPasswordValue.length > 0;
+  const isPasswordMatching = isConfirmTyped && confirmPasswordValue === passwordValue && !errors.confirmPassword;
+
   const isLoading = registerMutation.isPending;
 
   const calculateStrength = (val: string) => {
@@ -64,7 +101,7 @@ export default function RegisterPage() {
     <div className="w-full max-w-md mx-auto relative z-10">
       <GlassCard className="p-8 rounded-2xl shadow-2xl space-y-8 border border-white/5">
         <div className="text-center">
-          <h1 className="font-heading font-bold text-3xl text-primary tracking-tighter mb-6">TekcitYm</h1>
+          <Link to="/" className="font-heading font-bold text-3xl text-primary tracking-tighter mb-6 inline-block hover:opacity-80 transition-opacity">TekcitYm</Link>
           <h2 className="font-heading font-semibold text-3xl text-foreground">Create Account</h2>
           <p className="text-sm text-muted-foreground mt-2">Join to secure your spot at exclusive events.</p>
         </div>
@@ -116,6 +153,7 @@ export default function RegisterPage() {
               />
               <button 
                 type="button"
+                tabIndex={-1}
                 className="text-muted-foreground hover:text-foreground transition-colors ml-2 focus:outline-none"
                 onClick={() => setShowPassword(!showPassword)}
               >
@@ -137,7 +175,52 @@ export default function RegisterPage() {
             </div>
           </div>
           
-          {registerMutation.isError && (
+          {/* Confirm Password Field */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold tracking-wide text-muted-foreground" htmlFor="confirmPassword">Confirm Password</label>
+            <div className={`input-glass rounded-lg flex items-center px-4 py-3 transition-colors ${
+              errors.confirmPassword 
+                ? 'border-destructive' 
+                : isPasswordMatching 
+                ? 'border-emerald-500/60 bg-emerald-500/5' 
+                : ''
+            }`}>
+              <span className={`material-symbols-outlined mr-3 transition-colors ${isPasswordMatching ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                {isPasswordMatching ? 'check_circle' : 'lock_reset'}
+              </span>
+              <input 
+                id="confirmPassword" 
+                placeholder="••••••••" 
+                type={showConfirmPassword ? 'text' : 'password'} 
+                className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
+                {...register('confirmPassword')}
+              />
+              <button 
+                type="button"
+                tabIndex={-1}
+                className="text-muted-foreground hover:text-foreground transition-colors ml-2 focus:outline-none"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                <span className="material-symbols-outlined">{showConfirmPassword ? 'visibility' : 'visibility_off'}</span>
+              </button>
+            </div>
+            {errors.confirmPassword && (
+              <p className="text-xs text-destructive mt-1 flex items-center gap-1 font-medium">
+                <span className="material-symbols-outlined text-[14px]">error</span>
+                {errors.confirmPassword.message}
+              </p>
+            )}
+            {isPasswordMatching && (
+              <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                <span className="material-symbols-outlined text-[14px]">check</span>
+                Passwords match
+              </p>
+            )}
+          </div>
+          
+          {registerMutation.isError &&
+            !(registerMutation.error as any)?.response?.data?.details &&
+            (registerMutation.error as any)?.response?.data?.errorCode !== 'EMAIL_ALREADY_EXISTS' && (
             <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded border border-destructive/20">
               {(registerMutation.error as any)?.response?.data?.message || registerMutation.error.message || 'Registration failed. Please try again.'}
             </div>
