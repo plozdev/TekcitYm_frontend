@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
   const [submittedEmail, setSubmittedEmail] = useState('');
   const navigate = useNavigate();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ForgotPasswordFormValues>({
+  const { register, handleSubmit, reset, setError, formState: { errors } } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema)
   });
 
@@ -31,8 +31,13 @@ export default function ForgotPasswordPage() {
         setIsSubmitted(true);
       },
       onError: (error: any) => {
-        // Backend always returns 200 for forgot-password (prevent email enumeration).
-        // If it somehow fails (e.g. network error), it will be shown via mutation error state below.
+        const resData = error?.response?.data;
+        if (resData?.errorCode === 'USER_NOT_FOUND') {
+          setError('email', {
+            type: 'server',
+            message: resData.message || 'Email address not found in system.',
+          });
+        }
       }
     });
   };

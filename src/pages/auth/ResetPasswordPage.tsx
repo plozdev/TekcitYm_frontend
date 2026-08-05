@@ -27,7 +27,7 @@ export default function ResetPasswordPage() {
   // Requirements
   const reqLength = password.length >= 8;
   const reqNumber = /\d/.test(password);
-  const reqSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  const reqSpecial = /[^a-zA-Z0-9]/.test(password);
   
   const isMatch = confirmPassword.length > 0 && password === confirmPassword;
   const showMatchError = confirmPassword.length > 0 && password !== confirmPassword;
