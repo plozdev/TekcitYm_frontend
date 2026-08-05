@@ -10,41 +10,48 @@ import type {
   ResetPasswordRequest,
 } from '../../types/api';
 
+/**
+ * Login mutation.
+ * Navigation is handled by the calling page's onSuccess/onError callbacks.
+ */
 export const useLogin = () => {
   const { setUser, setTokens } = useAuthStore();
-  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (response) => {
       setTokens(response.accessToken, response.refreshToken);
       setUser(response.user);
-      navigate('/');
+      // Navigation is handled by the calling page
     },
   });
 };
 
-export const useRegister = () => {
-  const navigate = useNavigate();
-
-  return useMutation({
+/**
+ * Register mutation.
+ * Navigation to OTP page is handled by the calling page's onSuccess callback.
+ */
+export const useRegister = () =>
+  useMutation({
     mutationFn: (data: RegisterRequest) => authApi.register(data),
-    onSuccess: (_, variables) => {
-      navigate(`/verify-otp?email=${encodeURIComponent(variables.email)}`);
-    },
   });
-};
 
+/**
+ * Verify OTP mutation.
+ * Stores tokens on success. Navigation is handled by the calling page
+ * (different destinations depending on context: registration vs password reset).
+ */
 export const useVerifyOtp = () => {
   const { setUser, setTokens } = useAuthStore();
-  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: (data: OtpRequest) => authApi.verifyOtp(data),
     onSuccess: (response) => {
-      setTokens(response.accessToken, response.refreshToken);
-      setUser(response.user);
-      navigate('/');
+      if (response.accessToken && response.user) {
+        setTokens(response.accessToken, response.refreshToken);
+        setUser(response.user);
+      }
+      // Navigation is handled by the calling page
     },
   });
 };
@@ -54,17 +61,19 @@ export const useResendOtp = () =>
     mutationFn: (email: string) => authApi.resendOtp(email),
   });
 
-export const useForgotPassword = () => {
-  const navigate = useNavigate();
-
-  return useMutation({
+/**
+ * Forgot password mutation.
+ * Navigation is handled by the calling page's onSuccess callback.
+ */
+export const useForgotPassword = () =>
+  useMutation({
     mutationFn: (data: ForgotPasswordRequest) => authApi.forgotPassword(data),
-    onSuccess: () => {
-      navigate('/reset-password');
-    },
   });
-};
 
+/**
+ * Reset password mutation.
+ * Navigates to login on success.
+ */
 export const useResetPassword = () => {
   const navigate = useNavigate();
 

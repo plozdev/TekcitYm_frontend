@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { useResetPassword } from '../../features/auth/auth.hooks';
@@ -7,13 +7,22 @@ import { useResetPassword } from '../../features/auth/auth.hooks';
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
+  const navigate = useNavigate();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const resetPasswordMutation = useResetPassword();
+
+  // Guard: if no token, show clear error
+  useEffect(() => {
+    if (!token) {
+      // No token — user probably navigated here directly
+    }
+  }, [token]);
 
   // Requirements
   const reqLength = password.length >= 8;
@@ -27,8 +36,51 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isValid && token) {
-      resetPasswordMutation.mutate({ token, newPassword: password });
+    setServerError(null);
+
+    if (!token) {
+      setServerError('Invalid or missing reset token. Please request a new password reset.');
+      return;
+    }
+
+    if (isValid) {
+      resetPasswordMutation.mutate(
+        {
+          resetToken: token,
+          newPassword: password,
+          confirmNewPassword: confirmPassword,
+        },
+        {
+          onError: (error: any) => {
+            const resData = error?.response?.data;
+            
+            if (!error.response) {
+              setServerError('Unable to connect to the server. Please try again.');
+              return;
+            }
+
+            if (resData?.errorCode === 'INVALID_RESET_TOKEN') {
+              setServerError('Your reset link has expired. Please request a new one.');
+              return;
+            }
+
+            if (resData?.errorCode === 'PASSWORD_MISMATCH') {
+              setServerError('Passwords do not match.');
+              return;
+            }
+
+            // Handle validation errors from backend
+            const fieldErrors = resData?.details;
+            if (fieldErrors && typeof fieldErrors === 'object') {
+              const messages = Object.values(fieldErrors).join(' ');
+              setServerError(messages);
+              return;
+            }
+
+            setServerError(resData?.message || 'Failed to reset password. Please try again.');
+          }
+        }
+      );
     }
   };
 
@@ -66,7 +118,7 @@ export default function ResetPasswordPage() {
                   type={showPassword ? 'text' : 'password'} 
                   className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setServerError(null); }}
                 />
               </div>
             </div>
@@ -82,8 +134,10 @@ export default function ResetPasswordPage() {
                   {showConfirmPassword ? 'visibility' : 'visibility_off'}
                 </span>
               </label>
-              <div className="input-glass rounded-lg flex items-center px-4 py-3 group-focus-within:border-primary">
-                <span className="material-symbols-outlined text-muted-foreground mr-3 group-focus-within:text-primary transition-colors">lock_reset</span>
+              <div className={`input-glass rounded-lg flex items-center px-4 py-3 group-focus-within:border-primary transition-colors ${isMatch ? 'border-emerald-500/60 bg-emerald-500/5' : ''}`}>
+                <span className={`material-symbols-outlined mr-3 transition-colors ${isMatch ? 'text-emerald-400' : 'text-muted-foreground group-focus-within:text-primary'}`}>
+                  {isMatch ? 'check_circle' : 'lock_reset'}
+                </span>
                 <input 
                   id="confirm-password" 
                   placeholder="Confirm new password" 
@@ -91,11 +145,20 @@ export default function ResetPasswordPage() {
                   type={showConfirmPassword ? 'text' : 'password'} 
                   className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setServerError(null); }}
                 />
               </div>
               {showMatchError && (
-                <p className="text-xs font-medium text-destructive mt-1">Passwords do not match.</p>
+                <p className="text-xs font-medium text-destructive mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">error</span>
+                  Passwords do not match.
+                </p>
+              )}
+              {isMatch && (
+                <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                  <span className="material-symbols-outlined text-[14px]">check</span>
+                  Passwords match
+                </p>
               )}
             </div>
             
@@ -124,15 +187,21 @@ export default function ResetPasswordPage() {
               </ul>
             </div>
             
-            {resetPasswordMutation.isError && (
-              <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded border border-destructive/20 mt-4">
-                {(resetPasswordMutation.error as any)?.response?.data?.message || resetPasswordMutation.error.message || 'Failed to reset password'}
+            {/* Error messages */}
+            {serverError && (
+              <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded-lg border border-destructive/20 mt-4 flex items-start gap-2">
+                <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">error</span>
+                <span>{serverError}</span>
               </div>
             )}
             
             {!token && (
-              <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded border border-destructive/20 mt-4">
-                Invalid or missing reset token.
+              <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded-lg border border-destructive/20 mt-4 flex items-start gap-2">
+                <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">warning</span>
+                <div>
+                  <p>Invalid or missing reset token.</p>
+                  <Link to="/forgot-password" className="text-primary hover:text-primary/80 font-semibold underline mt-1 inline-block">Request a new reset link</Link>
+                </div>
               </div>
             )}
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +15,8 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState('');
+  const navigate = useNavigate();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema)
@@ -25,14 +27,24 @@ export default function ForgotPasswordPage() {
   const onSubmit = (data: ForgotPasswordFormValues) => {
     forgotPasswordMutation.mutate({ email: data.email }, {
       onSuccess: () => {
+        setSubmittedEmail(data.email);
         setIsSubmitted(true);
+      },
+      onError: (error: any) => {
+        // Backend always returns 200 for forgot-password (prevent email enumeration).
+        // If it somehow fails (e.g. network error), it will be shown via mutation error state below.
       }
     });
+  };
+
+  const handleContinueToOtp = () => {
+    navigate(`/verify-otp?email=${encodeURIComponent(submittedEmail)}&flow=reset`);
   };
 
   const resetForm = () => {
     reset();
     setIsSubmitted(false);
+    setSubmittedEmail('');
     forgotPasswordMutation.reset();
   };
 
@@ -51,7 +63,7 @@ export default function ForgotPasswordPage() {
             <div className="mb-8 text-center">
               <h2 className="font-heading font-semibold text-2xl text-foreground mb-2">Reset Password</h2>
               <p className="text-sm text-muted-foreground">
-                Enter the email associated with your account and we'll send an email with instructions to reset your password.
+                Enter the email associated with your account and we'll send a verification code to reset your password.
               </p>
             </div>
             
@@ -72,8 +84,10 @@ export default function ForgotPasswordPage() {
               </div>
               
               {forgotPasswordMutation.isError && (
-                <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded border border-destructive/20">
-                  {(forgotPasswordMutation.error as any)?.response?.data?.message || forgotPasswordMutation.error.message || 'Failed to send reset link'}
+                <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                  {!(forgotPasswordMutation.error as any)?.response
+                    ? 'Unable to connect to the server. Please check your network.'
+                    : (forgotPasswordMutation.error as any)?.response?.data?.message || 'Failed to send reset code. Please try again.'}
                 </div>
               )}
 
@@ -85,7 +99,7 @@ export default function ForgotPasswordPage() {
                    </svg>
                 ) : (
                   <>
-                    Send Reset Link
+                    Send Verification Code
                     <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                   </>
                 )}
@@ -97,15 +111,22 @@ export default function ForgotPasswordPage() {
             <div className="w-16 h-16 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
               <span className="material-symbols-outlined text-emerald-400 text-4xl icon-fill">check_circle</span>
             </div>
-            <h3 className="font-heading font-semibold text-2xl text-foreground mb-3">Check your email</h3>
+            <h3 className="font-heading font-semibold text-2xl text-foreground mb-3">Code Sent!</h3>
             <p className="text-sm text-muted-foreground mb-8">
-              We have sent a password reset link to your email address. Please check your inbox and spam folder.
+              We've sent a 6-digit verification code to <strong className="text-foreground">{submittedEmail}</strong>. Please check your inbox and spam folder.
             </p>
+            <Button
+              onClick={handleContinueToOtp}
+              className="w-full text-sm font-semibold py-3 glow-effect flex items-center justify-center gap-2 mb-4"
+            >
+              Enter Verification Code
+              <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+            </Button>
             <button 
               onClick={resetForm}
-              className="w-full bg-card hover:bg-card/80 text-foreground text-sm font-semibold py-3 px-4 rounded-lg transition-colors border border-border"
+              className="w-full bg-card/40 hover:bg-card/80 text-foreground text-sm font-semibold py-3 px-4 rounded-lg transition-colors border border-border"
             >
-              Didn't receive the email? Try again
+              Didn't receive the code? Try again
             </button>
           </div>
         )}

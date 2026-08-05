@@ -7,6 +7,7 @@ import { useVerifyOtp, useResendOtp } from '../../features/auth/auth.hooks';
 export default function OTPVerificationPage() {
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') || '';
+  const flow = searchParams.get('flow') || 'verify'; // 'verify' (registration) or 'reset' (forgot-password)
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -16,9 +17,15 @@ export default function OTPVerificationPage() {
   const verifyOtpMutation = useVerifyOtp();
   const resendOtpMutation = useResendOtp();
   
-  const isVerified = verifyOtpMutation.isSuccess;
   const hasError = verifyOtpMutation.isError;
   const isLoading = verifyOtpMutation.isPending;
+
+  // Guard: redirect to login if email is missing
+  useEffect(() => {
+    if (!email) {
+      navigate('/login', { replace: true });
+    }
+  }, [email, navigate]);
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -71,7 +78,20 @@ export default function OTPVerificationPage() {
   const handleVerify = () => {
     const code = otp.join('');
     if (code.length === 6) {
-      verifyOtpMutation.mutate({ email, otpCode: code });
+      verifyOtpMutation.mutate({ email, otpCode: code }, {
+        onSuccess: (response) => {
+          // If this is a password reset flow and we have a resetToken, go to reset-password
+          if (flow === 'reset' && response.resetToken) {
+            navigate(`/reset-password?token=${response.resetToken}`, { replace: true });
+          } else {
+            // Registration verification flow — user is now logged in
+            navigate('/', { replace: true });
+          }
+        },
+        onError: () => {
+          // Error is shown via mutation state below — no redirect needed
+        }
+      });
     }
   };
 
@@ -88,6 +108,9 @@ export default function OTPVerificationPage() {
 
   const isComplete = otp.every(val => val !== '');
 
+  // Don't render if email is missing (redirect is happening)
+  if (!email) return null;
+
   return (
     <div className="w-full max-w-md mx-auto px-4 md:px-0 relative z-10">
       {/* Brand Header */}
@@ -99,8 +122,10 @@ export default function OTPVerificationPage() {
       <GlassCard className="rounded-xl p-8 md:p-10 shadow-2xl flex flex-col items-center">
         <div className="mb-8 text-center w-full">
           <span className="material-symbols-outlined text-primary text-5xl mb-4 opacity-80 icon-fill">lock_open</span>
-          <h2 className="font-heading font-semibold text-2xl text-foreground mb-2">Verify Your Account</h2>
-          <p className="text-sm text-muted-foreground">We've sent a 6-digit code to<br/><strong className="text-foreground">{email || 'your email'}</strong></p>
+          <h2 className="font-heading font-semibold text-2xl text-foreground mb-2">
+            {flow === 'reset' ? 'Reset Password Verification' : 'Verify Your Account'}
+          </h2>
+          <p className="text-sm text-muted-foreground">We've sent a 6-digit code to<br/><strong className="text-foreground">{email}</strong></p>
         </div>
         
         {/* OTP Input Form */}
@@ -130,15 +155,19 @@ export default function OTPVerificationPage() {
           {hasError && (
             <div className="w-full text-center mb-4 flex items-center justify-center gap-1 text-destructive text-sm font-semibold">
               <span className="material-symbols-outlined text-[18px]">error</span>
-              <span>{(verifyOtpMutation.error as any)?.response?.data?.message || 'Invalid code. Please try again.'}</span>
+              <span>
+                {!(verifyOtpMutation.error as any)?.response
+                  ? 'Unable to connect to the server. Please try again.'
+                  : (verifyOtpMutation.error as any)?.response?.data?.message || 'Invalid code. Please try again.'}
+              </span>
             </div>
           )}
           
           <Button 
             type="button"
-            disabled={!isComplete || isVerified || isLoading}
+            disabled={!isComplete || isLoading}
             onClick={handleVerify}
-            className={`w-full text-sm font-semibold py-4 rounded-lg flex justify-center items-center gap-2 mb-6 transition-all ${isVerified ? 'bg-emerald-500 text-white' : 'glow-effect'}`}
+            className="w-full text-sm font-semibold py-4 rounded-lg flex justify-center items-center gap-2 mb-6 transition-all glow-effect"
           >
             {isLoading ? (
                <svg className="animate-spin h-5 w-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -147,8 +176,8 @@ export default function OTPVerificationPage() {
                </svg>
             ) : (
               <>
-                <span>{isVerified ? 'Verified' : 'Verify'}</span>
-                {!isVerified && <span className="material-symbols-outlined text-[20px]">arrow_forward</span>}
+                <span>Verify</span>
+                <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
               </>
             )}
           </Button>
@@ -166,7 +195,15 @@ export default function OTPVerificationPage() {
           </div>
           {resendOtpMutation.isError && (
              <div className="mt-2 text-xs text-destructive text-center">
-               {(resendOtpMutation.error as any)?.response?.data?.message || 'Failed to resend code'}
+               {!(resendOtpMutation.error as any)?.response
+                 ? 'Unable to connect to the server.'
+                 : (resendOtpMutation.error as any)?.response?.data?.message || 'Failed to resend code'}
+             </div>
+          )}
+          {resendOtpMutation.isSuccess && (
+             <div className="mt-2 text-xs text-emerald-400 text-center flex items-center justify-center gap-1">
+               <span className="material-symbols-outlined text-[14px]">check_circle</span>
+               New code sent successfully!
              </div>
           )}
         </div>

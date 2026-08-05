@@ -18,7 +18,7 @@ export const authApi = {
     apiClient.post<ApiResponse<{ message: string }>>('/auth/register', data).then((r) => r.data.data),
 
   verifyOtp: (data: OtpRequest) =>
-    apiClient.post<ApiResponse<AuthTokens & { user: User }>>('/auth/verify-otp', data).then((r) => r.data.data),
+    apiClient.post<ApiResponse<AuthTokens & { user: User; resetToken?: string }>>('/auth/verify-otp', data).then((r) => r.data.data),
 
   resendOtp: (email: string) =>
     apiClient.post<ApiResponse<{ message: string }>>('/auth/resend-otp', { email }).then((r) => r.data.data),

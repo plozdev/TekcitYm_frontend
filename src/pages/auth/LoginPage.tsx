@@ -33,11 +33,19 @@ export default function LoginPage() {
       },
       onError: (error: any) => {
         const resData = error?.response?.data;
+
+        // Handle specific error codes
         if (resData?.errorCode === 'EMAIL_NOT_VERIFIED') {
           navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`);
           return;
         }
 
+        if (resData?.errorCode === 'ACCOUNT_DISABLED') {
+          setServerError('Your account has been disabled. Please contact support.');
+          return;
+        }
+
+        // Handle field-level validation errors (e.g. "email must not be blank")
         const fieldErrors = resData?.details;
         if (fieldErrors && typeof fieldErrors === 'object') {
           Object.keys(fieldErrors).forEach((field) => {
@@ -46,9 +54,17 @@ export default function LoginPage() {
               message: fieldErrors[field],
             });
           });
-        } else {
-          setServerError(resData?.message || error?.message || 'Invalid email or password.');
+          return;
         }
+
+        // Handle network/timeout errors (no response from server)
+        if (!error.response) {
+          setServerError('Unable to connect to the server. Please check your network and try again.');
+          return;
+        }
+
+        // Generic server error message
+        setServerError(resData?.message || 'Invalid email or password.');
       }
     });
   };

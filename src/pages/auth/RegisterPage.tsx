@@ -30,8 +30,10 @@ export default function RegisterPage() {
   });
 
   const registerMutation = useRegister();
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const onSubmit = (data: RegisterFormValues) => {
+    setServerError(null);
     const payload = {
       fullName: data.fullName.trim(),
       email: data.email.trim(),
@@ -44,8 +46,18 @@ export default function RegisterPage() {
       },
       onError: (error: any) => {
         const resData = error?.response?.data;
-        const fieldErrors = resData?.details;
 
+        // Handle specific error codes
+        if (resData?.errorCode === 'EMAIL_ALREADY_EXISTS') {
+          setError('email', {
+            type: 'server',
+            message: resData.message || 'Email is already in use.',
+          });
+          return;
+        }
+
+        // Handle field-level validation errors
+        const fieldErrors = resData?.details;
         if (fieldErrors && typeof fieldErrors === 'object') {
           Object.keys(fieldErrors).forEach((field) => {
             if (field in data) {
@@ -55,12 +67,17 @@ export default function RegisterPage() {
               });
             }
           });
-        } else if (resData?.errorCode === 'EMAIL_ALREADY_EXISTS') {
-          setError('email', {
-            type: 'server',
-            message: resData.message || 'Email is already in use.',
-          });
+          return;
         }
+
+        // Handle network errors
+        if (!error.response) {
+          setServerError('Unable to connect to the server. Please check your network and try again.');
+          return;
+        }
+
+        // Generic server error
+        setServerError(resData?.message || 'Registration failed. Please try again.');
       }
     });
   };
@@ -218,11 +235,9 @@ export default function RegisterPage() {
             )}
           </div>
           
-          {registerMutation.isError &&
-            !(registerMutation.error as any)?.response?.data?.details &&
-            (registerMutation.error as any)?.response?.data?.errorCode !== 'EMAIL_ALREADY_EXISTS' && (
-            <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded border border-destructive/20">
-              {(registerMutation.error as any)?.response?.data?.message || registerMutation.error.message || 'Registration failed. Please try again.'}
+          {serverError && (
+            <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+              {serverError}
             </div>
           )}
 
