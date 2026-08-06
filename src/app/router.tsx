@@ -97,6 +97,14 @@ const router = createBrowserRouter([
   },
 ]);
 
+import { LoggerWidget } from '../components/common/LoggerWidget';
+
 export const AppRouter = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <LoggerWidget />
+    </>
+  );
 };
+
