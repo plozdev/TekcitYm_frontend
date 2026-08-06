@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { useRegister } from '../../features/auth/auth.hooks';
+import { logger } from '../../utils/logger';
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -24,6 +25,10 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    logger.info('REGISTER_PAGE', 'Navigated to Register Page');
+  }, []);
+
   const { register, handleSubmit, watch, setError, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     mode: 'onChange',
@@ -34,6 +39,8 @@ export default function RegisterPage() {
 
   const onSubmit = (data: RegisterFormValues) => {
     setServerError(null);
+    logger.info('REGISTER_PAGE', 'Register form submitted', { email: data.email, fullName: data.fullName });
+
     const payload = {
       fullName: data.fullName.trim(),
       email: data.email.trim(),
@@ -42,10 +49,13 @@ export default function RegisterPage() {
 
     registerMutation.mutate(payload, {
       onSuccess: () => {
+        logger.info('REGISTER_PAGE', 'Registration successful, navigating to /verify-otp', { email: payload.email });
         navigate(`/verify-otp?email=${encodeURIComponent(payload.email)}`);
       },
       onError: (error: any) => {
         const resData = error?.response?.data;
+        logger.error('REGISTER_PAGE', 'Registration error response', resData);
+
 
         // Handle specific error codes
         if (resData?.errorCode === 'EMAIL_ALREADY_EXISTS') {

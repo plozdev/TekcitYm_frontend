@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { useForgotPassword } from '../../features/auth/auth.hooks';
+import { logger } from '../../utils/logger';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -20,6 +21,10 @@ export default function ForgotPasswordPage() {
   const [submittedEmail, setSubmittedEmail] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    logger.info('FORGOT_PASSWORD_PAGE', 'Navigated to Forgot Password Page');
+  }, []);
 
   const { register, handleSubmit, reset, setError, formState: { errors } } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema)
@@ -36,12 +41,15 @@ export default function ForgotPasswordPage() {
   }, [resendCooldown]);
 
   const onSubmit = (data: ForgotPasswordFormValues) => {
+    logger.info('FORGOT_PASSWORD_PAGE', 'Submitting forgot password form', { email: data.email });
     forgotPasswordMutation.mutate({ email: data.email }, {
       onSuccess: () => {
+        logger.info('FORGOT_PASSWORD_PAGE', 'Forgot password request succeeded, navigating to /verify-otp with reset flow', { email: data.email });
         navigate(`/verify-otp?email=${encodeURIComponent(data.email)}&flow=reset`);
       },
       onError: (error: any) => {
         const resData = error?.response?.data;
+        logger.error('FORGOT_PASSWORD_PAGE', 'Forgot password request error', { email: data.email, resData });
         if (resData?.errorCode === 'USER_NOT_FOUND') {
           setError('email', {
             type: 'server',
@@ -56,6 +64,7 @@ export default function ForgotPasswordPage() {
       }
     });
   };
+
 
   const handleContinueToOtp = () => {
     navigate(`/verify-otp?email=${encodeURIComponent(submittedEmail)}&flow=reset`);

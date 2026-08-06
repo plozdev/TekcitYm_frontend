@@ -4,6 +4,7 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { useVerifyOtp, useResendOtp } from '../../features/auth/auth.hooks';
 import { useAuthStore } from '../../features/auth/auth.store';
+import { logger } from '../../utils/logger';
 
 export default function OTPVerificationPage() {
   const [searchParams] = useSearchParams();
@@ -23,10 +24,12 @@ export default function OTPVerificationPage() {
 
   // Guard: redirect to login if email is missing
   useEffect(() => {
+    logger.info('OTP_PAGE', 'Navigated to OTP Verification Page', { email, flow });
     if (!email) {
+      logger.warn('OTP_PAGE', 'No email found in query params, redirecting to /login');
       navigate('/login', { replace: true });
     }
-  }, [email, navigate]);
+  }, [email, flow, navigate]);
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -80,39 +83,54 @@ export default function OTPVerificationPage() {
 
   const handleVerify = () => {
     const code = otp.join('');
-    if (code.length === 6) {
+    if (code.length === 6 && !isLoading) {
+      logger.info('OTP_PAGE', 'Submitting OTP verification', { email, flow });
       verifyOtpMutation.mutate({ email, otpCode: code }, {
-        onSuccess: (response) => {
+        onSuccess: (response: any) => {
+          const resetToken = response?.resetToken || response?.reset_token || response?.token || '';
+
           // If this is a password reset flow, go to reset-password
           // DO NOT log the user in yet (no tokens saved)
           if (flow === 'reset') {
-            navigate(`/reset-password?token=${response.resetToken || ''}`, { replace: true });
+            logger.info('OTP_PAGE', 'OTP verified for password reset flow, navigating to /reset-password', { hasResetToken: !!resetToken });
+            navigate(`/reset-password?token=${encodeURIComponent(resetToken)}`, { replace: true });
           } else {
             // Registration verification flow — store tokens and log user in
-            if (response.accessToken && response.user) {
+            logger.info('OTP_PAGE', 'OTP verified for registration flow, setting auth state & navigating home');
+            if (response?.accessToken && response?.user) {
               setTokens(response.accessToken, response.refreshToken);
               setUser(response.user);
             }
             navigate('/', { replace: true });
           }
         },
-        onError: () => {
-          // Error is shown via mutation state below — no redirect needed
+        onError: (err: any) => {
+          logger.error('OTP_PAGE', 'OTP verification error', {
+            email,
+            errorCode: err?.response?.data?.errorCode,
+            message: err?.response?.data?.message,
+          });
         }
       });
     }
   };
 
   const handleResend = () => {
+    logger.info('OTP_PAGE', 'Resend OTP button clicked', { email });
     resendOtpMutation.mutate(email, {
       onSuccess: () => {
+        logger.info('OTP_PAGE', 'OTP resend successful, resetting timer');
         setTimeLeft(30);
         setOtp(['', '', '', '', '', '']);
         verifyOtpMutation.reset();
         inputRefs.current[0]?.focus();
+      },
+      onError: (err: any) => {
+        logger.error('OTP_PAGE', 'OTP resend failed', { email, message: err?.message });
       }
     });
   };
+
 
   const isComplete = otp.every(val => val !== '');
 
@@ -157,8 +175,11 @@ export default function OTPVerificationPage() {
                 onChange={e => handleChange(index, e.target.value)}
                 onKeyDown={e => {
                   handleKeyDown(index, e);
-                  if (e.key === 'Enter' && isComplete && !isLoading) {
-                    handleVerify();
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (isComplete && !isLoading) {
+                      handleVerify();
+                    }
                   }
                 }}
                 onPaste={handlePaste}

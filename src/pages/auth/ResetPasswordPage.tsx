@@ -4,6 +4,7 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { PasswordInput } from '../../components/ui/password-input';
 import { useResetPassword } from '../../features/auth/auth.hooks';
+import { logger } from '../../utils/logger';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -16,14 +17,29 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const [countdown, setCountdown] = useState(5);
   const resetPasswordMutation = useResetPassword();
 
   // Guard: if no token, show clear error
   useEffect(() => {
+    logger.info('RESET_PASSWORD_PAGE', 'Navigated to Reset Password Page', { hasToken: !!token });
     if (!token) {
-      // No token — user probably navigated here directly
+      logger.warn('RESET_PASSWORD_PAGE', 'No resetToken found in query parameters');
     }
   }, [token]);
+
+  // 5-second countdown timer after password reset success
+  useEffect(() => {
+    if (resetPasswordMutation.isSuccess) {
+      if (countdown > 0) {
+        const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+        return () => clearTimeout(timer);
+      } else {
+        logger.info('RESET_PASSWORD_PAGE', 'Auto-redirecting to login page after countdown');
+        navigate('/login', { replace: true });
+      }
+    }
+  }, [resetPasswordMutation.isSuccess, countdown, navigate]);
 
   // Requirements
   const reqLength = password.length >= 8;
@@ -40,11 +56,13 @@ export default function ResetPasswordPage() {
     setServerError(null);
 
     if (!token) {
+      logger.warn('RESET_PASSWORD_PAGE', 'Attempted submit without valid resetToken');
       setServerError('Invalid or missing reset token. Please request a new password reset.');
       return;
     }
 
     if (isValid) {
+      logger.info('RESET_PASSWORD_PAGE', 'Submitting reset password form');
       resetPasswordMutation.mutate(
         {
           resetToken: token,
@@ -52,8 +70,12 @@ export default function ResetPasswordPage() {
           confirmNewPassword: confirmPassword,
         },
         {
+          onSuccess: () => {
+            logger.info('RESET_PASSWORD_PAGE', 'Reset password succeeded');
+          },
           onError: (error: any) => {
             const resData = error?.response?.data;
+            logger.error('RESET_PASSWORD_PAGE', 'Reset password failed', resData);
             
             if (!error.response) {
               setServerError('Unable to connect to the server. Please try again.');
@@ -67,6 +89,15 @@ export default function ResetPasswordPage() {
 
             if (resData?.errorCode === 'PASSWORD_MISMATCH') {
               setServerError('Passwords do not match.');
+              return;
+            }
+
+            if (
+              resData?.errorCode === 'SAME_AS_OLD_PASSWORD' ||
+              resData?.errorCode === 'PASSWORD_SAME_AS_OLD' ||
+              resData?.errorCode === 'SAME_PASSWORD'
+            ) {
+              setServerError('New password cannot be the same as your old password.');
               return;
             }
 
@@ -188,11 +219,14 @@ export default function ResetPasswordPage() {
             <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl -z-10" />
           </div>
           <h2 className="font-heading font-semibold text-2xl text-foreground mb-2">Password Updated</h2>
-          <p className="text-sm text-muted-foreground mb-8">
+          <p className="text-sm text-muted-foreground mb-4">
             Your password has been successfully reset. You can now log in with your new credentials.
           </p>
+          <p className="text-xs text-muted-foreground mb-8">
+            Redirecting to login in <strong className="text-primary font-semibold">{countdown}s</strong>...
+          </p>
           <Link to="/login" className="w-full bg-primary text-primary-foreground text-sm font-semibold py-3 rounded-lg flex items-center justify-center glow-effect transition-all hover:brightness-110">
-            Continue to Login
+            Continue to Login ({countdown}s)
           </Link>
         </GlassCard>
       )}

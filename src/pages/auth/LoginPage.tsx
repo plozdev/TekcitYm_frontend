@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { useLogin } from '../../features/auth/auth.hooks';
+import { logger } from '../../utils/logger';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -18,6 +19,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    logger.info('LOGIN_PAGE', 'Navigated to Login Page');
+  }, []);
   
   const { register, handleSubmit, setError, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema)
@@ -27,8 +32,11 @@ export default function LoginPage() {
 
   const onSubmit = (data: LoginFormValues) => {
     setServerError(null);
+    logger.info('LOGIN_PAGE', 'Login form submitted', { email: data.email });
+
     loginMutation.mutate(data, {
       onSuccess: () => {
+        logger.info('LOGIN_PAGE', 'Login succeeded, navigating to home page');
         navigate('/');
       },
       onError: (error: any) => {
@@ -36,11 +44,13 @@ export default function LoginPage() {
 
         // Handle specific error codes
         if (resData?.errorCode === 'EMAIL_NOT_VERIFIED') {
+          logger.warn('LOGIN_PAGE', 'Email not verified, redirecting to verify OTP', { email: data.email });
           navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`);
           return;
         }
 
         if (resData?.errorCode === 'ACCOUNT_DISABLED') {
+          logger.warn('LOGIN_PAGE', 'Account disabled error encountered');
           setServerError('Your account has been disabled. Please contact support.');
           return;
         }
@@ -48,6 +58,7 @@ export default function LoginPage() {
         // Handle field-level validation errors (e.g. "email must not be blank")
         const fieldErrors = resData?.details;
         if (fieldErrors && typeof fieldErrors === 'object') {
+          logger.warn('LOGIN_PAGE', 'Validation errors from server', fieldErrors);
           Object.keys(fieldErrors).forEach((field) => {
             setError(field as keyof LoginFormValues, {
               type: 'server',
@@ -59,17 +70,20 @@ export default function LoginPage() {
 
         // Handle network/timeout errors (no response from server)
         if (!error.response) {
+          logger.error('LOGIN_PAGE', 'Network/Timeout error during login');
           setServerError('Unable to connect to the server. Please check your network and try again.');
           return;
         }
 
         // Generic server error message
+        logger.warn('LOGIN_PAGE', 'Generic login error message displayed', { message: resData?.message });
         setServerError(resData?.message || 'Invalid email or password.');
       }
     });
   };
 
   const isLoading = loginMutation.isPending;
+
 
   return (
     <div className="w-full max-w-md mx-auto">
