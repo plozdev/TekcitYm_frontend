@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { useVerifyOtp, useResendOtp } from '../../features/auth/auth.hooks';
+import { useAuthStore } from '../../features/auth/auth.store';
 
 export default function OTPVerificationPage() {
   const [searchParams] = useSearchParams();
@@ -75,16 +76,23 @@ export default function OTPVerificationPage() {
     }
   };
 
+  const { setUser, setTokens } = useAuthStore();
+
   const handleVerify = () => {
     const code = otp.join('');
     if (code.length === 6) {
       verifyOtpMutation.mutate({ email, otpCode: code }, {
         onSuccess: (response) => {
-          // If this is a password reset flow and we have a resetToken, go to reset-password
-          if (flow === 'reset' && response.resetToken) {
-            navigate(`/reset-password?token=${response.resetToken}`, { replace: true });
+          // If this is a password reset flow, go to reset-password
+          // DO NOT log the user in yet (no tokens saved)
+          if (flow === 'reset') {
+            navigate(`/reset-password?token=${response.resetToken || ''}`, { replace: true });
           } else {
-            // Registration verification flow — user is now logged in
+            // Registration verification flow — store tokens and log user in
+            if (response.accessToken && response.user) {
+              setTokens(response.accessToken, response.refreshToken);
+              setUser(response.user);
+            }
             navigate('/', { replace: true });
           }
         },
@@ -129,7 +137,15 @@ export default function OTPVerificationPage() {
         </div>
         
         {/* OTP Input Form */}
-        <div className="w-full flex flex-col items-center">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (isComplete && !isLoading) {
+              handleVerify();
+            }
+          }} 
+          className="w-full flex flex-col items-center"
+        >
           <div className={`flex justify-between w-full gap-2 mb-6 ${hasError ? 'otp-error-shake' : ''}`}>
             {otp.map((digit, index) => (
               <input
@@ -139,7 +155,12 @@ export default function OTPVerificationPage() {
                 maxLength={1}
                 value={digit}
                 onChange={e => handleChange(index, e.target.value)}
-                onKeyDown={e => handleKeyDown(index, e)}
+                onKeyDown={e => {
+                  handleKeyDown(index, e);
+                  if (e.key === 'Enter' && isComplete && !isLoading) {
+                    handleVerify();
+                  }
+                }}
                 onPaste={handlePaste}
                 autoFocus={index === 0}
                 className={`w-12 h-14 md:w-14 md:h-16 text-center font-heading font-semibold text-2xl md:text-3xl rounded-lg border transition-all duration-200 outline-none
@@ -164,9 +185,8 @@ export default function OTPVerificationPage() {
           )}
           
           <Button 
-            type="button"
+            type="submit"
             disabled={!isComplete || isLoading}
-            onClick={handleVerify}
             className="w-full text-sm font-semibold py-4 rounded-lg flex justify-center items-center gap-2 mb-6 transition-all glow-effect"
           >
             {isLoading ? (
@@ -206,7 +226,7 @@ export default function OTPVerificationPage() {
                New code sent successfully!
              </div>
           )}
-        </div>
+        </form>
       </GlassCard>
     </div>
   );

@@ -7,6 +7,7 @@ import { useAuthStore } from '../../features/auth/auth.store';
 import { useLogout } from '../../features/auth/auth.hooks';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
+import { PasswordInput } from '../../components/ui/password-input';
 
 const profileSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -218,43 +219,28 @@ export default function UserProfilePage() {
               Change Password
             </h3>
             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-5">
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Current Password</label>
-                <input
-                  {...passwordForm.register('currentPassword')}
-                  type="password"
-                  placeholder="Enter current password"
-                  className="w-full bg-card/50 border border-border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                />
-                {passwordForm.formState.errors.currentPassword && (
-                  <p className="text-destructive text-xs mt-1">{passwordForm.formState.errors.currentPassword.message}</p>
-                )}
-              </div>
+              <PasswordInput
+                label="Current Password"
+                placeholder="Enter current password"
+                error={passwordForm.formState.errors.currentPassword?.message}
+                {...passwordForm.register('currentPassword')}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">New Password</label>
-                  <input
-                    {...passwordForm.register('newPassword')}
-                    type="password"
-                    placeholder="Min. 8 characters"
-                    className="w-full bg-card/50 border border-border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
-                  {passwordForm.formState.errors.newPassword && (
-                    <p className="text-destructive text-xs mt-1">{passwordForm.formState.errors.newPassword.message}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Confirm New Password</label>
-                  <input
-                    {...passwordForm.register('confirmPassword')}
-                    type="password"
-                    placeholder="Repeat new password"
-                    className="w-full bg-card/50 border border-border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
-                  {passwordForm.formState.errors.confirmPassword && (
-                    <p className="text-destructive text-xs mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>
-                  )}
-                </div>
+                <PasswordInput
+                  label="New Password"
+                  placeholder="Min. 8 characters"
+                  showStrengthMeter={true}
+                  showRequirements={true}
+                  error={passwordForm.formState.errors.newPassword?.message}
+                  {...passwordForm.register('newPassword')}
+                />
+                <PasswordInput
+                  label="Confirm New Password"
+                  placeholder="Repeat new password"
+                  error={passwordForm.formState.errors.confirmPassword?.message}
+                  {...passwordForm.register('confirmPassword')}
+                />
               </div>
 
               {passwordError && (

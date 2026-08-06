@@ -5,6 +5,7 @@ import React, { Suspense } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import OrganizerLayout from '../layouts/OrganizerLayout';
+import ProtectedRoute from '../components/common/ProtectedRoute';
 
 // Pages - Lazy Loaded
 const DashboardPage = React.lazy(() => import('../pages/dashboard/DashboardPage'));
@@ -39,23 +40,35 @@ const LoadingFallback = () => (
   </div>
 );
 
+/** Helper to wrap a page in Suspense + ProtectedRoute */
+const protectedPage = (Page: React.LazyExoticComponent<any>) => (
+  <ProtectedRoute>
+    <Suspense fallback={<LoadingFallback />}>
+      <Page />
+    </Suspense>
+  </ProtectedRoute>
+);
+
 const router = createBrowserRouter([
   {
     path: '/',
     element: <MainLayout />,
     errorElement: <GlobalErrorPage />,
     children: [
+      // Public pages
       { index: true, element: <Suspense fallback={<LoadingFallback />}><DashboardPage /></Suspense> },
       { path: 'events', element: <Suspense fallback={<LoadingFallback />}><DiscoverEventsPage /></Suspense> },
       { path: 'events/:eventId', element: <Suspense fallback={<LoadingFallback />}><EventDetailsPage /></Suspense> },
-      { path: 'events/:eventId/seats', element: <Suspense fallback={<LoadingFallback />}><SelectSeatsPage /></Suspense> },
-      { path: 'checkout', element: <Suspense fallback={<LoadingFallback />}><CheckoutPage /></Suspense> },
-      { path: 'payment/processing', element: <Suspense fallback={<LoadingFallback />}><PaymentProcessingPage /></Suspense> },
-      { path: 'payment/failed', element: <Suspense fallback={<LoadingFallback />}><PaymentFailedPage /></Suspense> },
-      { path: 'booking/confirmed', element: <Suspense fallback={<LoadingFallback />}><BookingConfirmedPage /></Suspense> },
-      { path: 'tickets', element: <Suspense fallback={<LoadingFallback />}><MyTicketsPage /></Suspense> },
-      { path: 'tickets/:ticketId', element: <Suspense fallback={<LoadingFallback />}><TicketDetailsPage /></Suspense> },
-      { path: 'profile', element: <Suspense fallback={<LoadingFallback />}><UserProfilePage /></Suspense> },
+
+      // Protected pages — require authentication
+      { path: 'events/:eventId/seats', element: protectedPage(SelectSeatsPage) },
+      { path: 'checkout', element: protectedPage(CheckoutPage) },
+      { path: 'payment/processing', element: protectedPage(PaymentProcessingPage) },
+      { path: 'payment/failed', element: protectedPage(PaymentFailedPage) },
+      { path: 'booking/confirmed', element: protectedPage(BookingConfirmedPage) },
+      { path: 'tickets', element: protectedPage(MyTicketsPage) },
+      { path: 'tickets/:ticketId', element: protectedPage(TicketDetailsPage) },
+      { path: 'profile', element: protectedPage(UserProfilePage) },
     ],
   },
   {
@@ -75,11 +88,11 @@ const router = createBrowserRouter([
     element: <OrganizerLayout />,
     errorElement: <GlobalErrorPage />,
     children: [
-      { index: true, element: <Suspense fallback={<LoadingFallback />}><OrganizerDashboardPage /></Suspense> },
-      { path: 'events', element: <Suspense fallback={<LoadingFallback />}><EventListPage /></Suspense> },
-      { path: 'events/new', element: <Suspense fallback={<LoadingFallback />}><CreateEventPage /></Suspense> },
-      { path: 'analytics', element: <Suspense fallback={<LoadingFallback />}><RevenueAnalyticsPage /></Suspense> },
-      { path: 'seats-builder', element: <Suspense fallback={<LoadingFallback />}><SeatLayoutBuilderPage /></Suspense> },
+      { index: true, element: protectedPage(OrganizerDashboardPage) },
+      { path: 'events', element: protectedPage(EventListPage) },
+      { path: 'events/new', element: protectedPage(CreateEventPage) },
+      { path: 'analytics', element: protectedPage(RevenueAnalyticsPage) },
+      { path: 'seats-builder', element: protectedPage(SeatLayoutBuilderPage) },
     ],
   },
 ]);

@@ -38,21 +38,14 @@ export const useRegister = () =>
 
 /**
  * Verify OTP mutation.
- * Stores tokens on success. Navigation is handled by the calling page
- * (different destinations depending on context: registration vs password reset).
+ * Does NOT auto-store tokens — the calling page decides based on flow context:
+ *   - Registration flow: page stores tokens → navigate to home
+ *   - Password reset flow: page uses resetToken → navigate to reset-password (NO login)
  */
 export const useVerifyOtp = () => {
-  const { setUser, setTokens } = useAuthStore();
-
   return useMutation({
     mutationFn: (data: OtpRequest) => authApi.verifyOtp(data),
-    onSuccess: (response) => {
-      if (response.accessToken && response.user) {
-        setTokens(response.accessToken, response.refreshToken);
-        setUser(response.user);
-      }
-      // Navigation is handled by the calling page
-    },
+    // Tokens are handled by the calling page's onSuccess callback
   });
 };
 
@@ -72,16 +65,11 @@ export const useForgotPassword = () =>
 
 /**
  * Reset password mutation.
- * Navigates to login on success.
+ * Navigation is handled by the calling page.
  */
 export const useResetPassword = () => {
-  const navigate = useNavigate();
-
   return useMutation({
     mutationFn: (data: ResetPasswordRequest) => authApi.resetPassword(data),
-    onSuccess: () => {
-      navigate('/login');
-    },
   });
 };
 
@@ -93,7 +81,8 @@ export const useLogout = () => {
     mutationFn: () => authApi.logout(),
     onSettled: () => {
       clearAuth();
-      navigate('/login');
+      // Replace history so browser back button doesn't go to protected pages
+      navigate('/login', { replace: true });
     },
   });
 };

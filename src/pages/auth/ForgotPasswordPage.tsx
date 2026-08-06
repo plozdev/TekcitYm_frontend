@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,9 +13,12 @@ const forgotPasswordSchema = z.object({
 
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
+const RESEND_COOLDOWN_SECONDS = 60; // Show "Didn't receive?" after 60s
+
 export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const navigate = useNavigate();
 
   const { register, handleSubmit, reset, setError, formState: { errors } } = useForm<ForgotPasswordFormValues>({
@@ -24,11 +27,18 @@ export default function ForgotPasswordPage() {
 
   const forgotPasswordMutation = useForgotPassword();
 
+  // Cooldown timer for "Didn't receive the code?"
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
   const onSubmit = (data: ForgotPasswordFormValues) => {
     forgotPasswordMutation.mutate({ email: data.email }, {
       onSuccess: () => {
-        setSubmittedEmail(data.email);
-        setIsSubmitted(true);
+        navigate(`/verify-otp?email=${encodeURIComponent(data.email)}&flow=reset`);
       },
       onError: (error: any) => {
         const resData = error?.response?.data;
@@ -36,6 +46,11 @@ export default function ForgotPasswordPage() {
           setError('email', {
             type: 'server',
             message: resData.message || 'Email address not found in system.',
+          });
+        } else if (!error.response) {
+          setError('email', {
+            type: 'server',
+            message: 'Unable to connect to the server. Please check your network.',
           });
         }
       }
@@ -46,10 +61,19 @@ export default function ForgotPasswordPage() {
     navigate(`/verify-otp?email=${encodeURIComponent(submittedEmail)}&flow=reset`);
   };
 
+  const handleResend = () => {
+    forgotPasswordMutation.mutate({ email: submittedEmail }, {
+      onSuccess: () => {
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      }
+    });
+  };
+
   const resetForm = () => {
     reset();
     setIsSubmitted(false);
     setSubmittedEmail('');
+    setResendCooldown(0);
     forgotPasswordMutation.reset();
   };
 
@@ -88,7 +112,7 @@ export default function ForgotPasswordPage() {
                 {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
               </div>
               
-              {forgotPasswordMutation.isError && (
+              {forgotPasswordMutation.isError && !(errors.email) && (
                 <div className="text-sm text-destructive font-medium p-3 bg-destructive/10 rounded-lg border border-destructive/20">
                   {!(forgotPasswordMutation.error as any)?.response
                     ? 'Unable to connect to the server. Please check your network.'
@@ -120,18 +144,41 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-muted-foreground mb-8">
               We've sent a 6-digit verification code to <strong className="text-foreground">{submittedEmail}</strong>. Please check your inbox and spam folder.
             </p>
+
+            {/* Primary CTA: go to OTP page */}
             <Button
               onClick={handleContinueToOtp}
-              className="w-full text-sm font-semibold py-3 glow-effect flex items-center justify-center gap-2 mb-4"
+              className="w-full text-sm font-semibold py-6 glow-effect flex items-center justify-center gap-2 mb-8"
             >
               Enter Verification Code
               <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
             </Button>
+
+            {/* Resend with cooldown — only clickable after cooldown expires */}
+            <div className="text-center text-sm mt-4">
+              <span className="text-muted-foreground">Didn't receive the code?</span>
+              {resendCooldown > 0 ? (
+                <span className="ml-1 text-sm font-semibold text-muted-foreground cursor-not-allowed">
+                  Resend in {resendCooldown}s
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={forgotPasswordMutation.isPending}
+                  className="ml-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  {forgotPasswordMutation.isPending ? 'Sending...' : 'Resend Code'}
+                </button>
+              )}
+            </div>
+
+            {/* Option to change email */}
             <button 
               onClick={resetForm}
-              className="w-full bg-card/40 hover:bg-card/80 text-foreground text-sm font-semibold py-3 px-4 rounded-lg transition-colors border border-border"
+              className="mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors underline"
             >
-              Didn't receive the code? Try again
+              Use a different email address
             </button>
           </div>
         )}

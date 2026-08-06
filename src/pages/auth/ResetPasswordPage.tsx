@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
+import { PasswordInput } from '../../components/ui/password-input';
 import { useResetPassword } from '../../features/auth/auth.hooks';
 
 export default function ResetPasswordPage() {
@@ -99,55 +100,25 @@ export default function ResetPasswordPage() {
           <h2 className="font-heading font-semibold text-2xl text-foreground mb-6">Reset Password</h2>
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* New Password Field */}
-            <div className="space-y-2 relative group">
-              <label className="text-sm font-semibold tracking-wide text-muted-foreground flex items-center justify-between" htmlFor="new-password">
-                New Password
-                <span 
-                  className="material-symbols-outlined text-[16px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? 'visibility' : 'visibility_off'}
-                </span>
-              </label>
-              <div className="input-glass rounded-lg flex items-center px-4 py-3 group-focus-within:border-primary">
-                <span className="material-symbols-outlined text-muted-foreground mr-3 group-focus-within:text-primary transition-colors">lock</span>
-                <input 
-                  id="new-password" 
-                  placeholder="Enter new password" 
-                  required 
-                  type={showPassword ? 'text' : 'password'} 
-                  className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setServerError(null); }}
-                />
-              </div>
-            </div>
+            <PasswordInput
+              id="new-password"
+              label="New Password"
+              placeholder="Enter new password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setServerError(null); }}
+              showStrengthMeter={true}
+              showRequirements={true}
+            />
             
             {/* Confirm Password Field */}
-            <div className="space-y-2 relative group mt-5">
-              <label className="text-sm font-semibold tracking-wide text-muted-foreground flex items-center justify-between" htmlFor="confirm-password">
-                Confirm Password
-                <span 
-                  className="material-symbols-outlined text-[16px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? 'visibility' : 'visibility_off'}
-                </span>
-              </label>
-              <div className={`input-glass rounded-lg flex items-center px-4 py-3 group-focus-within:border-primary transition-colors ${isMatch ? 'border-emerald-500/60 bg-emerald-500/5' : ''}`}>
-                <span className={`material-symbols-outlined mr-3 transition-colors ${isMatch ? 'text-emerald-400' : 'text-muted-foreground group-focus-within:text-primary'}`}>
-                  {isMatch ? 'check_circle' : 'lock_reset'}
-                </span>
-                <input 
-                  id="confirm-password" 
-                  placeholder="Confirm new password" 
-                  required 
-                  type={showConfirmPassword ? 'text' : 'password'} 
-                  className="bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
-                  value={confirmPassword}
-                  onChange={(e) => { setConfirmPassword(e.target.value); setServerError(null); }}
-                />
-              </div>
+            <div className="space-y-1">
+              <PasswordInput
+                id="confirm-password"
+                label="Confirm Password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => { setConfirmPassword(e.target.value); setServerError(null); }}
+              />
               {showMatchError && (
                 <p className="text-xs font-medium text-destructive mt-1 flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">error</span>
@@ -160,31 +131,6 @@ export default function ResetPasswordPage() {
                   Passwords match
                 </p>
               )}
-            </div>
-            
-            {/* Password Requirements Checklist */}
-            <div className="bg-background/50 rounded-lg p-4 border border-border space-y-2 mt-4">
-              <p className="text-xs font-semibold text-muted-foreground mb-3">Password Requirements:</p>
-              <ul className="space-y-2 text-xs font-medium text-muted-foreground">
-                <li className={`flex items-center gap-2 transition-colors duration-300 ${reqLength ? 'text-emerald-400' : ''}`}>
-                  <span className="material-symbols-outlined text-[14px]">
-                    {reqLength ? 'check_circle' : 'circle'}
-                  </span>
-                  At least 8 characters
-                </li>
-                <li className={`flex items-center gap-2 transition-colors duration-300 ${reqNumber ? 'text-emerald-400' : ''}`}>
-                  <span className="material-symbols-outlined text-[14px]">
-                    {reqNumber ? 'check_circle' : 'circle'}
-                  </span>
-                  Contains a number
-                </li>
-                <li className={`flex items-center gap-2 transition-colors duration-300 ${reqSpecial ? 'text-emerald-400' : ''}`}>
-                  <span className="material-symbols-outlined text-[14px]">
-                    {reqSpecial ? 'check_circle' : 'circle'}
-                  </span>
-                  Contains a special character
-                </li>
-              </ul>
             </div>
             
             {/* Error messages */}
