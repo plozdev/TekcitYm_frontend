@@ -8,7 +8,8 @@ import { logger } from '../../utils/logger';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') || '';
+  const [initialToken] = useState(() => searchParams.get('token') || '');
+  const token = initialToken;
   const navigate = useNavigate();
 
   const [password, setPassword] = useState('');
@@ -26,7 +27,7 @@ export default function ResetPasswordPage() {
     if (!token) {
       logger.warn('RESET_PASSWORD_PAGE', 'No resetToken found in query parameters');
     }
-  }, [token]);
+  }, []); // Run check strictly on mount
 
   // 5-second countdown timer after password reset success
   useEffect(() => {

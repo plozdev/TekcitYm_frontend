@@ -8,8 +8,14 @@ import { logger } from '../../utils/logger';
 
 export default function OTPVerificationPage() {
   const [searchParams] = useSearchParams();
-  const email = searchParams.get('email') || '';
-  const flow = searchParams.get('flow') || 'verify'; // 'verify' (registration) or 'reset' (forgot-password)
+  
+  // Capture initial query parameters on mount to prevent exit animation rerenders
+  // from triggering guard redirects when query params disappear from the URL
+  const [initialParams] = useState(() => ({
+    email: searchParams.get('email') || '',
+    flow: searchParams.get('flow') || 'verify',
+  }));
+  const { email, flow } = initialParams;
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -22,14 +28,14 @@ export default function OTPVerificationPage() {
   const hasError = verifyOtpMutation.isError;
   const isLoading = verifyOtpMutation.isPending;
 
-  // Guard: redirect to login if email is missing
+  // Guard: redirect to login if email is missing (run ONLY on initial mount)
   useEffect(() => {
     logger.info('OTP_PAGE', 'Navigated to OTP Verification Page', { email, flow });
     if (!email) {
       logger.warn('OTP_PAGE', 'No email found in query params, redirecting to /login');
       navigate('/login', { replace: true });
     }
-  }, [email, flow, navigate]);
+  }, []); // Run guard strictly on mount
 
   useEffect(() => {
     if (timeLeft > 0) {

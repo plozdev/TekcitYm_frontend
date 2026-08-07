@@ -70,7 +70,7 @@ export const useRegister = () =>
 export const useVerifyOtp = () => {
   return useMutation({
     mutationFn: (data: OtpRequest) => {
-      logger.info('AUTH_HOOK', 'Initiating OTP verification', { email: data.email, flow: data.flow });
+      logger.info('AUTH_HOOK', 'Initiating OTP verification', { email: data.email });
       return authApi.verifyOtp(data);
     },
     onSuccess: (response, variables) => {
@@ -137,15 +137,14 @@ export const useForgotPassword = () =>
 export const useResetPassword = () => {
   return useMutation({
     mutationFn: (data: ResetPasswordRequest) => {
-      logger.info('AUTH_HOOK', 'Initiating reset password', { email: data.email });
+      logger.info('AUTH_HOOK', 'Initiating reset password');
       return authApi.resetPassword(data);
     },
-    onSuccess: (_, variables) => {
-      logger.info('AUTH_HOOK', 'Password reset successful', { email: variables.email });
+    onSuccess: () => {
+      logger.info('AUTH_HOOK', 'Password reset successful');
     },
-    onError: (error: any, variables) => {
+    onError: (error: any) => {
       logger.error('AUTH_HOOK', 'Password reset failed', {
-        email: variables.email,
         errorCode: error?.response?.data?.errorCode,
         message: error?.message,
       });
