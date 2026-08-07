@@ -15,15 +15,17 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
       showStrengthMeter = false,
       showRequirements = false,
       className = '',
-      value = '',
+      value,
       onChange,
       ...props
     },
     ref
   ) => {
     const [showPassword, setShowPassword] = useState(false);
+    const [internalValue, setInternalValue] = useState('');
 
-    const val = String(value || '');
+    const isControlled = value !== undefined;
+    const val = String(isControlled ? value : internalValue);
 
     // Requirements checks
     const reqLength = val.length >= 8;
@@ -52,6 +54,15 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
     } else {
       strengthScore = 0;
     }
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!isControlled) {
+        setInternalValue(e.target.value);
+      }
+      if (onChange) {
+        onChange(e);
+      }
+    };
 
     return (
       <div className="space-y-2 relative group w-full">
@@ -82,8 +93,8 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           <input
             ref={ref}
             type={showPassword ? 'text' : 'password'}
-            value={value}
-            onChange={onChange}
+            {...(isControlled ? { value } : {})}
+            onChange={handleChange}
             className={`bg-transparent border-none outline-none w-full text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-0 p-0 ${className}`}
             {...props}
           />
